@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ベイズ推論デモ - 交渉シミュレーション</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 ベイズ推論デモ</h1>
+            <p class="subtitle">人間 vs AIエージェント 交渉シミュレーション</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 左側: コントロールパネル -->
+            <div class="control-panel">
+                <div class="panel-section">
+                    <h2>⚙️ あなたの価値観 (W_SELF)</h2>
+                    <p class="hint">各アイテムに対するあなたの重みを設定</p>
+                    
+                    <div class="slider-group wself-sliders">
+                        <div class="slider-item small">
+                            <div class="slider-header">
+                                <span class="item-label">🍎 w1</span>
+                                <span class="wself-value" id="wself1-display">2</span>
+                            </div>
+                            <input type="range" id="wself1" min="-4" max="4" value="2" step="1" class="slider wself-slider">
+                        </div>
+                        <div class="slider-item small">
+                            <div class="slider-header">
+                                <span class="item-label">🍋 w2</span>
+                                <span class="wself-value" id="wself2-display">-1</span>
+                            </div>
+                            <input type="range" id="wself2" min="-4" max="4" value="-1" step="1" class="slider wself-slider">
+                        </div>
+                        <div class="slider-item small">
+                            <div class="slider-header">
+                                <span class="item-label">🍓 w3</span>
+                                <span class="wself-value" id="wself3-display">0</span>
+                            </div>
+                            <input type="range" id="wself3" min="-4" max="4" value="0" step="1" class="slider wself-slider">
+                        </div>
+                        <div class="slider-item small">
+                            <div class="slider-header">
+                                <span class="item-label">🥝 w4</span>
+                                <span class="wself-value" id="wself4-display">1</span>
+                            </div>
+                            <input type="range" id="wself4" min="-4" max="4" value="1" step="1" class="slider wself-slider">
+                        </div>
+                    </div>
+                    <button id="applyWselfBtn" class="apply-wself-btn">🔄 W_SELFを適用してリセット</button>
+                </div>
+
+                <div class="panel-section">
+                    <h2>📊 提案配分 (Self Items)</h2>
+                    <p class="hint">各アイテムの自分への配分を設定してください</p>
+                    
+                    <div class="slider-group">
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span class="item-icon">🍎🍎🍎🍎🍎🍎🍎</span>
+                                <span class="item-label">Item 1 (総量: 7)</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" id="slider1" min="0" max="7" value="0" class="slider">
+                                <div class="slider-values">
+                                    <span class="self-value">Self: <strong id="self1">0</strong></span>
+                                    <span class="other-value">Other: <strong id="other1">7</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span class="item-icon">🍋🍋🍋🍋🍋</span>
+                                <span class="item-label">Item 2 (総量: 5)</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" id="slider2" min="0" max="5" value="0" class="slider">
+                                <div class="slider-values">
+                                    <span class="self-value">Self: <strong id="self2">0</strong></span>
+                                    <span class="other-value">Other: <strong id="other2">5</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span class="item-icon">🍓🍓🍓🍓🍓</span>
+                                <span class="item-label">Item 3 (総量: 5)</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" id="slider3" min="0" max="5" value="0" class="slider">
+                                <div class="slider-values">
+                                    <span class="self-value">Self: <strong id="self3">0</strong></span>
+                                    <span class="other-value">Other: <strong id="other3">5</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <span class="item-icon">🥝🥝🥝🥝🥝</span>
+                                <span class="item-label">Item 4 (総量: 5)</span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" id="slider4" min="0" max="5" value="0" class="slider">
+                                <div class="slider-values">
+                                    <span class="self-value">Self: <strong id="self4">0</strong></span>
+                                    <span class="other-value">Other: <strong id="other4">5</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="applyBtn" class="apply-btn">
+                        ✨ Apply Offer
+                    </button>
+                </div>
+
+                <div class="panel-section">
+                    <h2>📜 履歴</h2>
+                    <div id="historyLog" class="history-log">
+                        <p class="history-placeholder">まだオファーがありません...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中央: エージェント表示 -->
+            <div class="agent-panel">
+                <div class="agent-container">
+                    <div class="agent-avatar">
+                        <img src="https://api.dicebear.com/7.x/personas/svg?seed=agent&backgroundColor=b6e3f4" alt="Agent" id="agentImg">
+                    </div>
+                    <div class="emotion-display" id="emotionDisplay">
+                        <span class="emotion-label">😐 NEUTRAL</span>
+                    </div>
+                    <div class="round-counter">
+                        Round: <span id="roundNumber">0</span>
+                    </div>
+                </div>
+
+                <div class="offer-summary">
+                    <h3>📋 現在の配分案</h3>
+                    <table class="offer-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Self</th>
+                                <th>Division</th>
+                                <th>Other</th>
+                            </tr>
+                        </thead>
+                        <tbody id="offerTableBody">
+                            <tr>
+                                <td>🍎 Item1</td>
+                                <td id="tblSelf1">0</td>
+                                <td class="division-cell"><div class="division-bar"><div class="self-bar" style="width:0%"></div></div></td>
+                                <td id="tblOther1">7</td>
+                            </tr>
+                            <tr>
+                                <td>🍋 Item2</td>
+                                <td id="tblSelf2">0</td>
+                                <td class="division-cell"><div class="division-bar"><div class="self-bar" style="width:0%"></div></div></td>
+                                <td id="tblOther2">5</td>
+                            </tr>
+                            <tr>
+                                <td>🍓 Item3</td>
+                                <td id="tblSelf3">0</td>
+                                <td class="division-cell"><div class="division-bar"><div class="self-bar" style="width:0%"></div></div></td>
+                                <td id="tblOther3">5</td>
+                            </tr>
+                            <tr>
+                                <td>🥝 Item4</td>
+                                <td id="tblSelf4">0</td>
+                                <td class="division-cell"><div class="division-bar"><div class="self-bar" style="width:0%"></div></div></td>
+                                <td id="tblOther4">5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 右側: 事後分布表示 -->
+            <div class="posterior-panel">
+                <div class="panel-section">
+                    <h2>📈 θの事後分布</h2>
+                    <canvas id="thetaChart"></canvas>
+                    <div class="stat-display">
+                        <span>推定θ (平均): <strong id="thetaEstimate">-</strong>°</span>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h2>📊 wの成分別事後分布</h2>
+                    <canvas id="wChart"></canvas>
+                    <div class="w-legend" id="wLegend"></div>
+                    <div class="stat-display">
+                        <span>推定w: [<strong id="wEstimate">-, -, -, -</strong>]</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <button id="newGameBtn" class="new-game-btn">🔄 New Game (新しいエージェント)</button>
+            <button id="revealBtn" class="reveal-btn">👁 正解を見る</button>
+            <div id="revealArea" class="reveal-area hidden">
+                <p><strong>正解:</strong> θ = <span id="trueTheta">?</span>°, w = [<span id="trueW">?, ?, ?, ?</span>]</p>
+                <p><strong>パターン名:</strong> <span id="patternName">?</span></p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="bayesian_engine.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
