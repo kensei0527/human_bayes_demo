@@ -98,9 +98,6 @@ function setupEventListeners() {
         slider.addEventListener('input', () => updateWSelfDisplays());
     }
     
-    // Applyボタン（手動適用も残す）
-    document.getElementById('applyBtn').addEventListener('click', applyOffer);
-    
     // W_SELF適用ボタン
     document.getElementById('applyWselfBtn').addEventListener('click', applyWSelf);
     
