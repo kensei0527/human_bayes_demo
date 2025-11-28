@@ -3,6 +3,16 @@
  * UI制御とゲームロジックの連携
  */
 
+// =============================================================================
+// UX設定（コメントアウトで切り替え可能）
+// =============================================================================
+
+// 【仕様1】スライダーを離した時にアプライ（ベイズ更新も実行）
+const APPLY_MODE = 'ON_RELEASE';
+
+// 【仕様2】スライド中もリアルタイムで表情変化（プレビューのみ、ベイズ更新はリリース時）
+// const APPLY_MODE = 'REALTIME_PREVIEW';
+
 // グローバル変数
 let game;
 let thetaChart;
@@ -65,7 +75,21 @@ function setupEventListeners() {
     // オファースライダーイベント
     for (let i = 1; i <= 4; i++) {
         const slider = document.getElementById(`slider${i}`);
-        slider.addEventListener('input', () => updateSliderDisplays());
+        
+        // 常に表示を更新
+        slider.addEventListener('input', () => {
+            updateSliderDisplays();
+            
+            // 【仕様2】リアルタイムプレビューモード: スライド中も表情を即時更新（ベイズ更新なし）
+            if (APPLY_MODE === 'REALTIME_PREVIEW') {
+                previewEmotion();
+            }
+        });
+        
+        // スライダーを離した時にアプライ（両仕様共通でベイズ更新を実行）
+        slider.addEventListener('change', () => {
+            applyOffer();
+        });
     }
     
     // W_SELFスライダーイベント
@@ -74,7 +98,7 @@ function setupEventListeners() {
         slider.addEventListener('input', () => updateWSelfDisplays());
     }
     
-    // Applyボタン
+    // Applyボタン（手動適用も残す）
     document.getElementById('applyBtn').addEventListener('click', applyOffer);
     
     // W_SELF適用ボタン
@@ -197,6 +221,20 @@ function createWLegend() {
 // オファー適用
 // =============================================================================
 
+/**
+ * 表情のプレビュー表示（ベイズ更新なし）
+ * リアルタイムモード用：スライド中に表情だけ変化させる
+ */
+function previewEmotion() {
+    const offer = getCurrentOffer();
+    
+    // ゲームの内部状態を変更せずに感情だけ計算
+    const emotion = game.emotionModel.sampleEmotion(offer, game.trueTheta, game.trueW);
+    
+    // 表情表示を更新（プレビュー用のスタイルを追加）
+    updateEmotionDisplay(emotion, true);
+}
+
 function applyOffer() {
     const offer = getCurrentOffer();
     const result = game.applyOffer(offer);
@@ -205,7 +243,7 @@ function applyOffer() {
     document.getElementById('roundNumber').textContent = result.round;
     
     // 感情表示更新
-    updateEmotionDisplay(result.emotion);
+    updateEmotionDisplay(result.emotion, false);
     
     // 履歴更新
     addHistoryEntry(result.round, offer, result.emotion);
@@ -218,12 +256,16 @@ function applyOffer() {
     document.getElementById('wEstimate').textContent = result.wMean.map(v => v.toFixed(2)).join(', ');
 }
 
-function updateEmotionDisplay(emotion) {
+function updateEmotionDisplay(emotion, isPreview = false) {
     const emotionData = EMOTION_LABELS[emotion.toString()];
     const emotionDisplay = document.getElementById('emotionDisplay');
     
     // クラスをリセットして新しいクラスを適用
-    emotionDisplay.className = `emotion-display ${emotionData.class}`;
+    let className = `emotion-display ${emotionData.class}`;
+    if (isPreview) {
+        className += ' preview';  // プレビュー時は追加クラス
+    }
+    emotionDisplay.className = className;
     emotionDisplay.querySelector('.emotion-label').textContent = emotionData.label;
 }
 
