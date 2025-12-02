@@ -4,7 +4,7 @@
  */
 
 // =============================================================================
-// UX設定（コメントアウトで切り替え可能）
+// UX設定
 // =============================================================================
 
 // 【仕様1】スライダーを離した時にアプライ（ベイズ更新も実行）
@@ -17,8 +17,12 @@ const APPLY_MODE = 'ON_RELEASE';
 let game;
 let thetaChart;
 let wChart;
+let posteriorVisible = true;  // 事後分布表示のON/OFF状態
 
-// w成分の色定義（plot_posteriors_per_roundと同様のtab10カラーマップ）
+// アイテム絵文字
+const ITEM_ICONS = ['🍎', '🍋', '🍓', '🥝'];
+
+// w成分の色定義（tab10カラーマップ）
 const W_COLORS = [
     { line: '#1f77b4', fill: 'rgba(31, 119, 180, 0.3)' },   // w1: 青
     { line: '#ff7f0e', fill: 'rgba(255, 127, 14, 0.3)' },   // w2: オレンジ
@@ -28,15 +32,15 @@ const W_COLORS = [
 
 // 感情ラベルマッピング
 const EMOTION_LABELS = {
-    '-1': { label: '😠 ANGER', class: 'anger' },
-    '0': { label: '😐 NEUTRAL', class: 'neutral' },
-    '1': { label: '🙂 JOY 1', class: 'joy1' },
-    '2': { label: '😊 JOY 2', class: 'joy2' },
-    '3': { label: '😄 JOY 3', class: 'joy3' },
-    '4': { label: '😁 JOY 4', class: 'joy4' },
-    '5': { label: '🤩 JOY 5', class: 'joy5' },
-    '6': { label: '🥳 JOY 6', class: 'joy6' },
-    '7': { label: '🎉 JOY 7', class: 'joy7' }
+    '-1': { label: '😠', fullLabel: '😠 ANGER', class: 'anger' },
+    '0': { label: '😐', fullLabel: '😐 NEUTRAL', class: 'neutral' },
+    '1': { label: '🙂', fullLabel: '🙂 JOY 1', class: 'joy1' },
+    '2': { label: '😊', fullLabel: '😊 JOY 2', class: 'joy2' },
+    '3': { label: '😄', fullLabel: '😄 JOY 3', class: 'joy3' },
+    '4': { label: '😁', fullLabel: '😁 JOY 4', class: 'joy4' },
+    '5': { label: '🤩', fullLabel: '🤩 JOY 5', class: 'joy5' },
+    '6': { label: '🥳', fullLabel: '🥳 JOY 6', class: 'joy6' },
+    '7': { label: '🎉', fullLabel: '🎉 JOY 7', class: 'joy7' }
 };
 
 // =============================================================================
@@ -47,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initGame();
     setupEventListeners();
     initCharts();
-    updateSliderDisplays();
+    updateItemDisplays();
     updateWSelfDisplays();
     createWLegend();
 });
@@ -58,12 +62,18 @@ function initGame() {
     document.getElementById('revealArea').classList.add('hidden');
     
     // 感情表示をリセット
+    const emotionContainer = document.getElementById('emotionContainer');
     const emotionDisplay = document.getElementById('emotionDisplay');
+    emotionContainer.className = 'emotion-container neutral';
     emotionDisplay.className = 'emotion-display neutral';
-    emotionDisplay.querySelector('.emotion-label').textContent = '😐 NEUTRAL';
+    emotionDisplay.querySelector('.emotion-icon').textContent = '😐';
+    document.getElementById('emotionText').textContent = 'NEUTRAL';
     
     // 履歴をクリア
     document.getElementById('historyLog').innerHTML = '<p class="history-placeholder">まだオファーがありません...</p>';
+    
+    // アイテム表示を初期化
+    updateItemDisplays();
     
     // チャートをリセット
     if (thetaChart && wChart) {
@@ -72,21 +82,21 @@ function initGame() {
 }
 
 function setupEventListeners() {
-    // オファースライダーイベント
+    // 縦スライダーイベント
     for (let i = 1; i <= 4; i++) {
         const slider = document.getElementById(`slider${i}`);
         
-        // 常に表示を更新
+        // スライド中に表示を更新
         slider.addEventListener('input', () => {
-            updateSliderDisplays();
+            updateItemDisplays();
             
-            // 【仕様2】リアルタイムプレビューモード: スライド中も表情を即時更新（ベイズ更新なし）
+            // リアルタイムプレビューモード
             if (APPLY_MODE === 'REALTIME_PREVIEW') {
                 previewEmotion();
             }
         });
         
-        // スライダーを離した時にアプライ（両仕様共通でベイズ更新を実行）
+        // スライダーを離した時にアプライ
         slider.addEventListener('change', () => {
             applyOffer();
         });
@@ -109,49 +119,64 @@ function setupEventListeners() {
     
     // 正解を見るボタン
     document.getElementById('revealBtn').addEventListener('click', revealAnswer);
+    
+    // 事後分布表示切替ボタン
+    document.getElementById('togglePosteriorBtn').addEventListener('click', togglePosterior);
 }
 
 // =============================================================================
-// スライダー制御
+// アイテム表示の更新（新しいUI用）
 // =============================================================================
 
-function updateSliderDisplays() {
+function updateItemDisplays() {
     const Q = CONFIG.Q;
     
     for (let i = 1; i <= 4; i++) {
         const slider = document.getElementById(`slider${i}`);
-        const selfVal = parseInt(slider.value);
-        const otherVal = Q[i - 1] - selfVal;
+        const sliderVal = parseInt(slider.value);
+        // スライダーを上に動かすとselfが増える（反転）
+        const selfVal = Q[i - 1] - sliderVal;
+        const otherVal = sliderVal;
         
-        document.getElementById(`self${i}`).textContent = selfVal;
-        document.getElementById(`other${i}`).textContent = otherVal;
+        // カウント表示を更新
+        document.getElementById(`selfCount${i}`).textContent = selfVal;
+        document.getElementById(`otherCount${i}`).textContent = otherVal;
         
-        // テーブル更新
-        document.getElementById(`tblSelf${i}`).textContent = selfVal;
-        document.getElementById(`tblOther${i}`).textContent = otherVal;
-        
-        // 配分バー更新
-        const percentage = (selfVal / Q[i - 1]) * 100;
-        const bars = document.querySelectorAll('.self-bar');
-        if (bars[i - 1]) {
-            bars[i - 1].style.width = `${percentage}%`;
-        }
+        // アイテムアイコンを更新
+        updateItemIcons(`selfItems${i}`, selfVal, ITEM_ICONS[i - 1]);
+        updateItemIcons(`otherItems${i}`, otherVal, ITEM_ICONS[i - 1]);
+    }
+}
+
+function updateItemIcons(containerId, count, icon) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    for (let j = 0; j < count; j++) {
+        const span = document.createElement('span');
+        span.className = 'item-icon';
+        span.textContent = icon;
+        span.style.animationDelay = `${j * 0.05}s`;
+        container.appendChild(span);
     }
 }
 
 function resetSliders() {
     for (let i = 1; i <= 4; i++) {
-        document.getElementById(`slider${i}`).value = 0;
+        const slider = document.getElementById(`slider${i}`);
+        // 初期状態：全部相手側（スライダー最大値）
+        slider.value = slider.max;
     }
-    updateSliderDisplays();
+    updateItemDisplays();
 }
 
 function getCurrentOffer() {
+    const Q = CONFIG.Q;
     return [
-        parseInt(document.getElementById('slider1').value),
-        parseInt(document.getElementById('slider2').value),
-        parseInt(document.getElementById('slider3').value),
-        parseInt(document.getElementById('slider4').value)
+        Q[0] - parseInt(document.getElementById('slider1').value),
+        Q[1] - parseInt(document.getElementById('slider2').value),
+        Q[2] - parseInt(document.getElementById('slider3').value),
+        Q[3] - parseInt(document.getElementById('slider4').value)
     ];
 }
 
@@ -187,10 +212,10 @@ function applyWSelf() {
     // 感情表示をリセット
     const emotionDisplay = document.getElementById('emotionDisplay');
     emotionDisplay.className = 'emotion-display neutral';
-    emotionDisplay.querySelector('.emotion-label').textContent = '😐 NEUTRAL';
+    emotionDisplay.querySelector('.emotion-label').textContent = '😐';
     
     // 履歴をクリア
-    document.getElementById('historyLog').innerHTML = '<p class="history-placeholder">W_SELFを更新しました。新しいオファーを試してください...</p>';
+    document.getElementById('historyLog').innerHTML = '<p class="history-placeholder">W_SELFを更新しました</p>';
     
     // チャートをリセット
     resetCharts();
@@ -215,20 +240,32 @@ function createWLegend() {
 }
 
 // =============================================================================
+// 事後分布表示の切り替え
+// =============================================================================
+
+function togglePosterior() {
+    posteriorVisible = !posteriorVisible;
+    const content = document.getElementById('posteriorContent');
+    const btn = document.getElementById('togglePosteriorBtn');
+    
+    if (posteriorVisible) {
+        content.classList.remove('hidden');
+        btn.textContent = '🙈 隠す';
+        btn.classList.remove('hidden-mode');
+    } else {
+        content.classList.add('hidden');
+        btn.textContent = '👁 表示';
+        btn.classList.add('hidden-mode');
+    }
+}
+
+// =============================================================================
 // オファー適用
 // =============================================================================
 
-/**
- * 表情のプレビュー表示（ベイズ更新なし）
- * リアルタイムモード用：スライド中に表情だけ変化させる
- */
 function previewEmotion() {
     const offer = getCurrentOffer();
-    
-    // ゲームの内部状態を変更せずに感情だけ計算
-    const emotion = game.emotionModel.sampleEmotion(offer, game.trueTheta, game.trueW);
-    
-    // 表情表示を更新（プレビュー用のスタイルを追加）
+    const emotion = game.engine.computeTrueEmotion(offer, game.trueTheta, game.trueW);
     updateEmotionDisplay(emotion, true);
 }
 
@@ -255,15 +292,23 @@ function applyOffer() {
 
 function updateEmotionDisplay(emotion, isPreview = false) {
     const emotionData = EMOTION_LABELS[emotion.toString()];
+    const emotionContainer = document.getElementById('emotionContainer');
     const emotionDisplay = document.getElementById('emotionDisplay');
+    const emotionText = document.getElementById('emotionText');
     
-    // クラスをリセットして新しいクラスを適用
-    let className = `emotion-display ${emotionData.class}`;
+    // コンテナに感情クラスを追加（テキスト色変更用）
+    emotionContainer.className = `emotion-container ${emotionData.class}`;
+    
+    let displayClass = `emotion-display ${emotionData.class}`;
     if (isPreview) {
-        className += ' preview';  // プレビュー時は追加クラス
+        displayClass += ' preview';
     }
-    emotionDisplay.className = className;
-    emotionDisplay.querySelector('.emotion-label').textContent = emotionData.label;
+    emotionDisplay.className = displayClass;
+    emotionDisplay.querySelector('.emotion-icon').textContent = emotionData.label;
+    
+    // テキストラベルを更新
+    const textLabel = emotionData.fullLabel.split(' ').slice(1).join(' ');
+    emotionText.textContent = textLabel;
 }
 
 function addHistoryEntry(round, offer, emotion) {
@@ -315,10 +360,10 @@ function initCharts() {
             },
             scales: {
                 x: {
-                    title: { display: true, text: 'θ (度)' }
+                    title: { display: true, text: 'θ (度)', font: { size: 10 } }
                 },
                 y: {
-                    title: { display: true, text: '確率' },
+                    title: { display: true, text: '確率', font: { size: 10 } },
                     min: 0,
                     max: 1
                 }
@@ -326,7 +371,7 @@ function initCharts() {
         }
     });
     
-    // wチャート（成分ごとの周辺分布 - plot_posteriors_per_roundスタイル）
+    // wチャート
     const wCtx = document.getElementById('wChart').getContext('2d');
     wChart = new Chart(wCtx, {
         type: 'line',
@@ -340,7 +385,7 @@ function initCharts() {
                     backgroundColor: W_COLORS[0].fill,
                     fill: false,
                     tension: 0,
-                    pointRadius: 4,
+                    pointRadius: 3,
                     pointStyle: 'circle'
                 },
                 {
@@ -350,7 +395,7 @@ function initCharts() {
                     backgroundColor: W_COLORS[1].fill,
                     fill: false,
                     tension: 0,
-                    pointRadius: 4,
+                    pointRadius: 3,
                     pointStyle: 'circle'
                 },
                 {
@@ -360,7 +405,7 @@ function initCharts() {
                     backgroundColor: W_COLORS[2].fill,
                     fill: false,
                     tension: 0,
-                    pointRadius: 4,
+                    pointRadius: 3,
                     pointStyle: 'circle'
                 },
                 {
@@ -370,7 +415,7 @@ function initCharts() {
                     backgroundColor: W_COLORS[3].fill,
                     fill: false,
                     tension: 0,
-                    pointRadius: 4,
+                    pointRadius: 3,
                     pointStyle: 'circle'
                 }
             ]
@@ -383,12 +428,12 @@ function initCharts() {
             },
             scales: {
                 x: {
-                    title: { display: true, text: '成分値' },
+                    title: { display: true, text: '成分値', font: { size: 10 } },
                     min: -4,
                     max: 4
                 },
                 y: {
-                    title: { display: true, text: '確率' },
+                    title: { display: true, text: '確率', font: { size: 10 } },
                     min: 0,
                     max: 1
                 }
@@ -396,12 +441,12 @@ function initCharts() {
         }
     });
     
-    // 初期状態（一様分布）を表示
+    // 初期状態を表示
     resetCharts();
 }
 
 function resetCharts() {
-    // θの一様分布を表示
+    // θの一様分布
     const thetaLabels = [];
     const uniformTheta = [];
     for (let t = CONFIG.THETA_GRID_MIN; t <= CONFIG.THETA_GRID_MAX; t += CONFIG.THETA_GRID_STEP) {
@@ -413,7 +458,7 @@ function resetCharts() {
     thetaChart.data.datasets[0].data = uniformTheta;
     thetaChart.update();
     
-    // wを一様分布で初期化（各成分について）
+    // wの一様分布
     const wValues = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
     const uniformProb = 1 / wValues.length;
     
@@ -434,19 +479,17 @@ function updateCharts(result) {
     thetaChart.data.labels = result.thetaGrid.map(t => t.toFixed(0));
     thetaChart.data.datasets[0].data = result.thetaMarginal;
     
-    // Y軸の最大値を動的に調整
     const maxProbTheta = Math.max(...result.thetaMarginal);
     thetaChart.options.scales.y.max = Math.min(1, Math.max(0.1, maxProbTheta * 1.2));
     thetaChart.update();
     
-    // wチャート更新（成分ごとの周辺分布）
+    // wチャート更新
     if (result.wComponentMarginals) {
         let maxProbW = 0;
         
         for (let i = 0; i < 4; i++) {
             const marginal = result.wComponentMarginals[i];
             
-            // Chart.jsのデータ形式に変換（x, yのペア）
             const data = marginal.values.map((val, idx) => ({
                 x: val,
                 y: marginal.probs[idx]
@@ -454,12 +497,10 @@ function updateCharts(result) {
             
             wChart.data.datasets[i].data = data;
             
-            // 最大確率を追跡
             const compMax = Math.max(...marginal.probs);
             if (compMax > maxProbW) maxProbW = compMax;
         }
         
-        // Y軸の最大値を動的に調整
         wChart.options.scales.y.max = Math.min(1, Math.max(0.2, maxProbW * 1.1));
         wChart.update();
     }
