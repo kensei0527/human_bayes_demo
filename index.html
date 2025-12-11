@@ -32,16 +32,6 @@
                             <input type="range" id="wself2" min="-4" max="4" value="-1" step="1" class="wself-slider">
                             <span class="wself-value" id="wself2-display">-1</span>
                         </div>
-                        <div class="wself-item">
-                            <span class="wself-label">🍓 w3</span>
-                            <input type="range" id="wself3" min="-4" max="4" value="0" step="1" class="wself-slider">
-                            <span class="wself-value" id="wself3-display">0</span>
-                        </div>
-                        <div class="wself-item">
-                            <span class="wself-label">🥝 w4</span>
-                            <input type="range" id="wself4" min="-4" max="4" value="1" step="1" class="wself-slider">
-                            <span class="wself-value" id="wself4-display">1</span>
-                        </div>
                     </div>
                     <button id="applyWselfBtn" class="apply-wself-btn">🔄 W_SELFを適用してリセット</button>
                 </div>
@@ -59,7 +49,7 @@
                         <button id="revealBtn" class="reveal-btn">👁 正解を見る</button>
                     </div>
                     <div id="revealArea" class="reveal-area hidden">
-                        <p><strong>正解:</strong> θ = <span id="trueTheta">?</span>°, w = [<span id="trueW">?, ?, ?, ?</span>]</p>
+                        <p><strong>正解:</strong> θ = <span id="trueTheta">?</span>°, w = [<span id="trueW">?, ?</span>]</p>
                         <p><strong>パターン:</strong> <span id="patternName">?</span></p>
                     </div>
                 </div>
@@ -94,16 +84,6 @@
                             <div class="pile-items" id="otherItems2"></div>
                             <span class="pile-count" id="otherCount2">5</span>
                         </div>
-                        <div class="item-pile" id="otherPile3">
-                            <span class="pile-label">🍓</span>
-                            <div class="pile-items" id="otherItems3"></div>
-                            <span class="pile-count" id="otherCount3">5</span>
-                        </div>
-                        <div class="item-pile" id="otherPile4">
-                            <span class="pile-label">🥝</span>
-                            <div class="pile-items" id="otherItems4"></div>
-                            <span class="pile-count" id="otherCount4">5</span>
-                        </div>
                     </div>
                 </div>
 
@@ -119,16 +99,6 @@
                         <div class="v-slider-container">
                             <span class="v-slider-label">🍋</span>
                             <input type="range" id="slider2" min="0" max="5" value="0" class="v-slider" orient="vertical">
-                            <span class="v-slider-total">5</span>
-                        </div>
-                        <div class="v-slider-container">
-                            <span class="v-slider-label">🍓</span>
-                            <input type="range" id="slider3" min="0" max="5" value="0" class="v-slider" orient="vertical">
-                            <span class="v-slider-total">5</span>
-                        </div>
-                        <div class="v-slider-container">
-                            <span class="v-slider-label">🥝</span>
-                            <input type="range" id="slider4" min="0" max="5" value="0" class="v-slider" orient="vertical">
                             <span class="v-slider-total">5</span>
                         </div>
                     </div>
@@ -147,16 +117,6 @@
                             <span class="pile-count" id="selfCount2">0</span>
                             <div class="pile-items" id="selfItems2"></div>
                             <span class="pile-label">🍋</span>
-                        </div>
-                        <div class="item-pile" id="selfPile3">
-                            <span class="pile-count" id="selfCount3">0</span>
-                            <div class="pile-items" id="selfItems3"></div>
-                            <span class="pile-label">🍓</span>
-                        </div>
-                        <div class="item-pile" id="selfPile4">
-                            <span class="pile-count" id="selfCount4">0</span>
-                            <div class="pile-items" id="selfItems4"></div>
-                            <span class="pile-label">🥝</span>
                         </div>
                     </div>
                     <div class="side-header">
@@ -186,7 +146,7 @@
                         <canvas id="wChart"></canvas>
                         <div class="w-legend" id="wLegend"></div>
                         <div class="stat-display">
-                            推定w: [<strong id="wEstimate">-, -, -, -</strong>]
+                            推定w: [<strong id="wEstimate">-, -</strong>]
                         </div>
                     </div>
                 </div>

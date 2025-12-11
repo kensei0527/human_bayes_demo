@@ -20,14 +20,12 @@ let wChart;
 let posteriorVisible = true;  // 事後分布表示のON/OFF状態
 
 // アイテム絵文字
-const ITEM_ICONS = ['🍎', '🍋', '🍓', '🥝'];
+const ITEM_ICONS = ['🍎', '🍋'];
 
 // w成分の色定義（tab10カラーマップ）
 const W_COLORS = [
     { line: '#1f77b4', fill: 'rgba(31, 119, 180, 0.3)' },   // w1: 青
-    { line: '#ff7f0e', fill: 'rgba(255, 127, 14, 0.3)' },   // w2: オレンジ
-    { line: '#2ca02c', fill: 'rgba(44, 160, 44, 0.3)' },    // w3: 緑
-    { line: '#d62728', fill: 'rgba(214, 39, 40, 0.3)' }     // w4: 赤
+    { line: '#ff7f0e', fill: 'rgba(255, 127, 14, 0.3)' }    // w2: オレンジ
 ];
 
 // 感情ラベルマッピング
@@ -83,7 +81,7 @@ function initGame() {
 
 function setupEventListeners() {
     // 縦スライダーイベント
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 2; i++) {
         const slider = document.getElementById(`slider${i}`);
         
         // スライド中に表示を更新
@@ -103,7 +101,7 @@ function setupEventListeners() {
     }
     
     // W_SELFスライダーイベント
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 2; i++) {
         const slider = document.getElementById(`wself${i}`);
         slider.addEventListener('input', () => updateWSelfDisplays());
     }
@@ -131,7 +129,7 @@ function setupEventListeners() {
 function updateItemDisplays() {
     const Q = CONFIG.Q;
     
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 2; i++) {
         const slider = document.getElementById(`slider${i}`);
         const sliderVal = parseInt(slider.value);
         // スライダーを上に動かすとselfが増える（反転）
@@ -162,7 +160,7 @@ function updateItemIcons(containerId, count, icon) {
 }
 
 function resetSliders() {
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 2; i++) {
         const slider = document.getElementById(`slider${i}`);
         // 初期状態：全部相手側（スライダー最大値）
         slider.value = slider.max;
@@ -174,9 +172,7 @@ function getCurrentOffer() {
     const Q = CONFIG.Q;
     return [
         Q[0] - parseInt(document.getElementById('slider1').value),
-        Q[1] - parseInt(document.getElementById('slider2').value),
-        Q[2] - parseInt(document.getElementById('slider3').value),
-        Q[3] - parseInt(document.getElementById('slider4').value)
+        Q[1] - parseInt(document.getElementById('slider2').value)
     ];
 }
 
@@ -185,7 +181,7 @@ function getCurrentOffer() {
 // =============================================================================
 
 function updateWSelfDisplays() {
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 2; i++) {
         const slider = document.getElementById(`wself${i}`);
         const value = parseInt(slider.value);
         document.getElementById(`wself${i}-display`).textContent = value;
@@ -195,9 +191,7 @@ function updateWSelfDisplays() {
 function getCurrentWSelf() {
     return [
         parseInt(document.getElementById('wself1').value),
-        parseInt(document.getElementById('wself2').value),
-        parseInt(document.getElementById('wself3').value),
-        parseInt(document.getElementById('wself4').value)
+        parseInt(document.getElementById('wself2').value)
     ];
 }
 
@@ -226,9 +220,9 @@ function createWLegend() {
     const legendContainer = document.getElementById('wLegend');
     legendContainer.innerHTML = '';
     
-    const labels = ['w1', 'w2', 'w3', 'w4'];
+    const labels = ['w1', 'w2'];
     
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
         const item = document.createElement('div');
         item.className = 'w-legend-item';
         item.innerHTML = `
@@ -397,26 +391,6 @@ function initCharts() {
                     tension: 0,
                     pointRadius: 3,
                     pointStyle: 'circle'
-                },
-                {
-                    label: 'w3',
-                    data: [],
-                    borderColor: W_COLORS[2].line,
-                    backgroundColor: W_COLORS[2].fill,
-                    fill: false,
-                    tension: 0,
-                    pointRadius: 3,
-                    pointStyle: 'circle'
-                },
-                {
-                    label: 'w4',
-                    data: [],
-                    borderColor: W_COLORS[3].line,
-                    backgroundColor: W_COLORS[3].fill,
-                    fill: false,
-                    tension: 0,
-                    pointRadius: 3,
-                    pointStyle: 'circle'
                 }
             ]
         },
@@ -462,7 +436,7 @@ function resetCharts() {
     const wValues = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
     const uniformProb = 1 / wValues.length;
     
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
         wChart.data.datasets[i].data = wValues.map(() => uniformProb);
     }
     wChart.data.labels = wValues;
@@ -471,7 +445,7 @@ function resetCharts() {
     
     // 統計表示をリセット
     document.getElementById('thetaEstimate').textContent = '-';
-    document.getElementById('wEstimate').textContent = '-, -, -, -';
+    document.getElementById('wEstimate').textContent = '-, -';
 }
 
 function updateCharts(result) {
@@ -487,7 +461,7 @@ function updateCharts(result) {
     if (result.wComponentMarginals) {
         let maxProbW = 0;
         
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 2; i++) {
             const marginal = result.wComponentMarginals[i];
             
             const data = marginal.values.map((val, idx) => ({

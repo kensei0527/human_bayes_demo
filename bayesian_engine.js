@@ -17,16 +17,16 @@
 // =============================================================================
 
 const CONFIG = {
-    // 論点の総量 Q = [Q1, Q2, Q3, Q4]
-    Q: [7, 5, 5, 5],
+    // 論点の総量 Q = [Q1, Q2]
+    Q: [7, 5],
     
     // プレイヤーの重み（UI から動的に変更可能）
-    W_SELF: [2, -1, 0, 1],
+    W_SELF: [2, -1],
     
     // パラメータグリッド設定
     W_GRID_MIN: -4,
     W_GRID_MAX: 4,
-    W_GRID_STEP: 1,      // w ∈ {-4, -3, ..., 3, 4}^4 → 9^4 = 6561 通り
+    W_GRID_STEP: 1,      // w ∈ {-4, -3, ..., 3, 4}^2 → 9^2 = 81 通り
     
     THETA_GRID_MIN: -90,
     THETA_GRID_MAX: 90,
@@ -51,76 +51,67 @@ const CONFIG = {
 
 // 難しいパターン（推定が困難）
 const HARD_PATTERNS = [
-    { name: "extreme_neg_1st × 0°", theta: 0, w: [-4, 0, 0, 0] },
-    { name: "balanced_neg × 0°", theta: 0, w: [-2, -2, -2, -2] },
-    { name: "skewed_3rd × -15°", theta: -15, w: [-1, -1, 4, -1] },
-    { name: "triple_124 × 0°", theta: 0, w: [2, 2, -2, 2] },
-    { name: "extreme_neg_1st × -45°", theta: -45, w: [-4, 0, 0, 0] },
-    { name: "balanced_pos × 0°", theta: 0, w: [2, 2, 2, 2] },
-    { name: "diagonal_1 × 45°", theta: 45, w: [3, -1, -1, 3] },
-    { name: "diagonal_2 × 45°", theta: 45, w: [-1, 3, 3, -1] }
+    { name: "extreme_neg_1st × 0°", theta: 0, w: [-4, 0] },
+    { name: "balanced_neg × 0°", theta: 0, w: [-2, -2] },
+    { name: "skewed_2nd × -15°", theta: -15, w: [-1, 4] },
+    { name: "balanced_pos × 0°", theta: 0, w: [2, 2] },
+    { name: "extreme_neg_1st × -45°", theta: -45, w: [-4, 0] },
+    { name: "contrast × 45°", theta: 45, w: [3, -1] },
+    { name: "contrast_rev × 45°", theta: 45, w: [-1, 3] }
 ];
 
 // 簡単なパターン（推定が容易）
 const EASY_PATTERNS = [
-    { name: "uniform × 90°", theta: 90, w: [1, 1, 1, 1] },
-    { name: "skewed_1st × 90°", theta: 90, w: [4, -1, -1, -1] },
-    { name: "ascending × 90°", theta: 90, w: [-2, -1, 1, 2] },
-    { name: "uniform × 75°", theta: 75, w: [1, 1, 1, 1] },
-    { name: "ascending × 75°", theta: 75, w: [-2, -1, 1, 2] },
-    { name: "skewed_1st × -45°", theta: -45, w: [4, -1, -1, -1] },
-    { name: "skewed_1st × -30°", theta: -30, w: [4, -1, -1, -1] },
-    { name: "uniform × -15°", theta: -15, w: [1, 1, 1, 1] }
+    { name: "uniform × 90°", theta: 90, w: [1, 1] },
+    { name: "skewed_1st × 90°", theta: 90, w: [4, -1] },
+    { name: "ascending × 90°", theta: 90, w: [-2, 2] },
+    { name: "uniform × 75°", theta: 75, w: [1, 1] },
+    { name: "ascending × 75°", theta: 75, w: [-2, 2] },
+    { name: "skewed_1st × -45°", theta: -45, w: [4, -1] },
+    { name: "skewed_1st × -30°", theta: -30, w: [4, -1] },
+    { name: "uniform × -15°", theta: -15, w: [1, 1] }
 ];
 
 const VARIUS_TEST_PATTERN = [
     // === θ = 90° (完全利他的: 相手の効用のみ考慮) ===
-    { name: "uniform × 90°", theta: 90, w: [1, 1, 1, 1] },
-    { name: "ascending × 90°", theta: 90, w: [-1, 0, 1, 2] },
-    { name: "descending × 90°", theta: 90, w: [2, 1, 0, -1] },
-    { name: "focus_1st × 90°", theta: 90, w: [3, 1, 0, -1] },
-    { name: "focus_4th × 90°", theta: 90, w: [-1, 0, 1, 3] },
-    { name: "contrast × 90°", theta: 90, w: [2, -1, 2, -1] },
-    { name: "mild_pos × 90°", theta: 90, w: [2, 1, 1, 0] },
-    { name: "mild_neg × 90°", theta: 90, w: [0, -1, 1, 2] },
-    { name: "balanced × 90°", theta: 90, w: [1, 2, -1, 1] },
-    { name: "spread × 90°", theta: 90, w: [3, -2, 1, 0] },
+    { name: "uniform × 90°", theta: 90, w: [1, 1] },
+    { name: "ascending × 90°", theta: 90, w: [-1, 2] },
+    { name: "descending × 90°", theta: 90, w: [2, -1] },
+    { name: "focus_1st × 90°", theta: 90, w: [3, 0] },
+    { name: "focus_2nd × 90°", theta: 90, w: [0, 3] },
+    { name: "contrast × 90°", theta: 90, w: [2, -2] },
+    { name: "mild_pos × 90°", theta: 90, w: [2, 1] },
+    { name: "mild_neg × 90°", theta: 90, w: [-1, 2] },
     
     // === θ = 45° (バランス型: 自分と相手を同等に考慮) ===
-    { name: "uniform × 45°", theta: 45, w: [1, 1, 1, 1] },
-    { name: "ascending × 45°", theta: 45, w: [-1, 0, 1, 2] },
-    { name: "descending × 45°", theta: 45, w: [2, 1, 0, -1] },
-    { name: "focus_2nd × 45°", theta: 45, w: [0, 3, 1, -1] },
-    { name: "focus_3rd × 45°", theta: 45, w: [-1, 1, 3, 0] },
-    { name: "contrast × 45°", theta: 45, w: [-1, 2, -1, 2] },
-    { name: "mild_pos × 45°", theta: 45, w: [1, 2, 1, 0] },
-    { name: "mild_neg × 45°", theta: 45, w: [0, 1, -1, 2] },
-    { name: "diagonal × 45°", theta: 45, w: [2, 0, 1, 2] },
-    { name: "mixed × 45°", theta: 45, w: [1, -2, 2, 1] },
+    { name: "uniform × 45°", theta: 45, w: [1, 1] },
+    { name: "ascending × 45°", theta: 45, w: [-1, 2] },
+    { name: "descending × 45°", theta: 45, w: [2, -1] },
+    { name: "focus_1st × 45°", theta: 45, w: [3, 0] },
+    { name: "focus_2nd × 45°", theta: 45, w: [0, 3] },
+    { name: "contrast × 45°", theta: 45, w: [-2, 2] },
+    { name: "mild_pos × 45°", theta: 45, w: [1, 2] },
+    { name: "mild_neg × 45°", theta: 45, w: [0, 1] },
     
     // === θ = 0° (中立: 自分の効用のみ考慮) ===
-    { name: "uniform × 0°", theta: 0, w: [1, 1, 1, 1] },
-    { name: "ascending × 0°", theta: 0, w: [-1, 0, 1, 2] },
-    { name: "descending × 0°", theta: 0, w: [2, 1, 0, -1] },
-    { name: "focus_1st × 0°", theta: 0, w: [3, 0, -1, 1] },
-    { name: "focus_2nd × 0°", theta: 0, w: [1, 3, 0, -1] },
-    { name: "contrast × 0°", theta: 0, w: [2, -2, 1, -1] },
-    { name: "mild_pos × 0°", theta: 0, w: [2, 2, 0, 1] },
-    { name: "mild_neg × 0°", theta: 0, w: [-1, 1, 2, 0] },
-    { name: "spread × 0°", theta: 0, w: [1, -1, 2, 1] },
-    { name: "asymmetric × 0°", theta: 0, w: [0, 2, -1, 3] },
+    { name: "uniform × 0°", theta: 0, w: [1, 1] },
+    { name: "ascending × 0°", theta: 0, w: [-1, 2] },
+    { name: "descending × 0°", theta: 0, w: [2, -1] },
+    { name: "focus_1st × 0°", theta: 0, w: [3, 0] },
+    { name: "focus_2nd × 0°", theta: 0, w: [0, 3] },
+    { name: "contrast × 0°", theta: 0, w: [2, -2] },
+    { name: "mild_pos × 0°", theta: 0, w: [2, 1] },
+    { name: "mild_neg × 0°", theta: 0, w: [-1, 1] },
     
     // === θ = -45° (競争的: 相手の損失を重視) ===
-    { name: "uniform × -45°", theta: -45, w: [1, 1, 1, 1] },
-    { name: "ascending × -45°", theta: -45, w: [-1, 0, 1, 2] },
-    { name: "descending × -45°", theta: -45, w: [2, 1, 0, -1] },
-    { name: "focus_3rd × -45°", theta: -45, w: [0, -1, 3, 1] },
-    { name: "focus_4th × -45°", theta: -45, w: [1, 0, -1, 3] },
-    { name: "contrast × -45°", theta: -45, w: [-1, 1, 2, -2] },
-    { name: "mild_pos × -45°", theta: -45, w: [1, 0, 2, 1] },
-    { name: "mild_neg × -45°", theta: -45, w: [0, 2, 1, -1] },
-    { name: "spread × -45°", theta: -45, w: [2, -1, 0, 2] },
-    { name: "asymmetric × -45°", theta: -45, w: [-1, 3, 1, 0] }
+    { name: "uniform × -45°", theta: -45, w: [1, 1] },
+    { name: "ascending × -45°", theta: -45, w: [-1, 2] },
+    { name: "descending × -45°", theta: -45, w: [2, -1] },
+    { name: "focus_1st × -45°", theta: -45, w: [3, 0] },
+    { name: "focus_2nd × -45°", theta: -45, w: [0, 3] },
+    { name: "contrast × -45°", theta: -45, w: [-2, 2] },
+    { name: "mild_pos × -45°", theta: -45, w: [1, 2] },
+    { name: "mild_neg × -45°", theta: -45, w: [0, -1] }
 ];
 
 // 使用するパターン一覧
@@ -169,14 +160,10 @@ function generateAllOffers(Q) {
     const offers = [];
     for (let a = 0; a <= Q[0]; a++) {
         for (let b = 0; b <= Q[1]; b++) {
-            for (let c = 0; c <= Q[2]; c++) {
-                for (let d = 0; d <= Q[3]; d++) {
-                    offers.push([a, b, c, d]);
-                }
-            }
+            offers.push([a, b]);
         }
     }
-    return offers;  // (Q[0]+1) * (Q[1]+1) * (Q[2]+1) * (Q[3]+1) = 1296 通り
+    return offers;  // (Q[0]+1) * (Q[1]+1) = 48 通り
 }
 
 /** w のパラメータグリッドを生成 */
@@ -189,14 +176,10 @@ function generateWGrid(min, max, step) {
     const grid = [];
     for (const a of values) {
         for (const b of values) {
-            for (const c of values) {
-                for (const d of values) {
-                    grid.push([a, b, c, d]);
-                }
-            }
+            grid.push([a, b]);
         }
     }
-    return grid;  // 9^4 = 6561 通り
+    return grid;  // 9^2 = 81 通り
 }
 
 /** θ のパラメータグリッドを生成（ラジアンで返す） */
@@ -257,14 +240,14 @@ class ParameterSpace {
     }
     
     /**
-     * w の各成分 (w1, w2, w3, w4) ごとの周辺分布を計算
+     * w の各成分 (w1, w2) ごとの周辺分布を計算
      * 例: P(w1 = k) = Σ_{w: w[0]=k} P(w)
      */
     getComponentWiseMarginals() {
         const wMarginal = this.getMarginalW();
         const marginals = [];
         
-        for (let comp = 0; comp < 4; comp++) {
+        for (let comp = 0; comp < 2; comp++) {
             const valueProbs = new Map();
             
             for (let j = 0; j < this.Nw; j++) {
@@ -300,9 +283,9 @@ class ParameterSpace {
             }
         }
         
-        const wMean = [0, 0, 0, 0];
+        const wMean = [0, 0];
         for (let j = 0; j < this.Nw; j++) {
-            for (let k = 0; k < 4; k++) {
+            for (let k = 0; k < 2; k++) {
                 wMean[k] += wMarginal[j] * this.wGrid[j][k];
             }
         }
