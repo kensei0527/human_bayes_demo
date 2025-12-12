@@ -50,6 +50,7 @@ const CONFIG = {
 // =============================================================================
 
 // 難しいパターン（推定が困難）
+/*
 const HARD_PATTERNS = [
     { name: "extreme_neg_1st × 0°", theta: 0, w: [-4, 0] },
     { name: "balanced_neg × 0°", theta: 0, w: [-2, -2] },
@@ -59,8 +60,10 @@ const HARD_PATTERNS = [
     { name: "contrast × 45°", theta: 45, w: [3, -1] },
     { name: "contrast_rev × 45°", theta: 45, w: [-1, 3] }
 ];
+*/
 
 // 簡単なパターン（推定が容易）
+/*
 const EASY_PATTERNS = [
     { name: "uniform × 90°", theta: 90, w: [1, 1] },
     { name: "skewed_1st × 90°", theta: 90, w: [4, -1] },
@@ -71,7 +74,9 @@ const EASY_PATTERNS = [
     { name: "skewed_1st × -30°", theta: -30, w: [4, -1] },
     { name: "uniform × -15°", theta: -15, w: [1, 1] }
 ];
+*/
 
+/*
 const VARIUS_TEST_PATTERN = [
     // === θ = 90° (完全利他的: 相手の効用のみ考慮) ===
     { name: "uniform × 90°", theta: 90, w: [1, 1] },
@@ -113,9 +118,28 @@ const VARIUS_TEST_PATTERN = [
     { name: "mild_pos × -45°", theta: -45, w: [1, 2] },
     { name: "mild_neg × -45°", theta: -45, w: [0, -1] }
 ];
+*/
+
+// 指定されたパラメータパターン
+const SPECIFIED_PATTERNS = [
+    // θ = 0, w_self = [4, -3], w_other = [-1, 4]
+    { name: "pattern1 × 0°", theta: 0, w: [-1, 4] },
+    
+    // θ = 45, w_self = [4, -3], w_other = [2, 2]
+    { name: "pattern2 × 45°", theta: 45, w: [2, 2] },
+    
+    // θ = -45, w_self = [4, -3], w_other = [2, 2]
+    { name: "pattern3 × -45°", theta: -45, w: [2, 2] },
+    
+    // θ = 45, w_self = [2, -1], w_other = [4, -4]
+    { name: "pattern4 × 45°", theta: 45, w: [4, -4] },
+    
+    // θ = -45, w_self = [2, -1], w_other = [-4, 0]
+    { name: "pattern5 × -45°", theta: -45, w: [-4, 0] }
+];
 
 // 使用するパターン一覧
-const ALL_PATTERNS = [...VARIUS_TEST_PATTERN];
+const ALL_PATTERNS = [...SPECIFIED_PATTERNS];
 
 // =============================================================================
 // ユーティリティ関数
